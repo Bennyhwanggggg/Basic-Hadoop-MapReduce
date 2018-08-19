@@ -29,6 +29,7 @@ public class CoTermNSPair {
 			while (itr.hasMoreTokens()) {
 				terms.add(itr.nextToken().toLowerCase());
 			}
+			System.out.println(terms.get(0));
 			for (int i=0; i<terms.size(); i++){
 				for (int j=i+1; j<terms.size(); j++) {
 					word.set(terms.get(i) + " " + terms.get(j));

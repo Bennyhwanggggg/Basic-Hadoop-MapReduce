@@ -16,6 +16,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Mapper.Context;
@@ -50,24 +52,37 @@ public class Project1 {
 			
 			Set<String> uniqueTerms = new HashSet<String>(terms);
 			for (String term: uniqueTerms) {
-				pair.set(term, "**");
+				pair.set(term, "*");
 				context.write(pair, one);
 			}
 		}
 	}
 	
+//	public static class PairKeysGroupingComparator extends WritableComparator {
+//		
+//		protected PairKeysGroupingComparator(){
+//			super(StringPair.class, true);
+//		}
+//		
+//		public int compare(WritableComparable wc1, WritableComparable wc2) {
+//			StringPair pair1 = (StringPair) wc1;
+//			StringPair pair2 = (StringPair) wc2;
+//			return pair1.getFirst().compareTo(pair2.getFirst());
+//		}
+//	}
+	
 	public class PairKeysPartitioner extends Partitioner<StringPair, IntWritable> {
 
 		@Override
 		public int getPartition(StringPair key, IntWritable intWritable, int numPartitions) {
-			return (key.getFirst().hashCode() & Integer.MAX_VALUE) % numPartitions;
+			System.out.println(key.toString());
+			return (key.getFirst().hashCode()) % numPartitions;
 		}
 	}
 	
 	public static class TFIDFReducer extends Reducer<StringPair, IntWritable, Text, Text> {
-		private DoubleWritable tf = new DoubleWritable();
+
 		private DoubleWritable df = new DoubleWritable();
-		private DoubleWritable weight = new DoubleWritable();
 		
 		public void reduce(StringPair key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			int sum = 0;
@@ -75,12 +90,12 @@ public class Project1 {
 				sum += val.get();
 			}
 			
-			if (key.getSecond().equals("**")) {
+			if (key.getSecond().equals("*")) {
 				df.set(sum);
 			} else {
-				tf.set(sum);
+				double tf = sum;
 				double idf = Math.log10(4/df.get());
-				weight = new DoubleWritable(tf.get() * idf);
+				DoubleWritable weight = new DoubleWritable(tf * idf);
 				Text term = new Text(key.getFirst());
 				Text result = new Text(key.getSecond() + ", " + weight.toString());
 				context.write(term, result);
@@ -102,12 +117,14 @@ public class Project1 {
 		job.setJarByClass(Project1.class);
 		job.setMapperClass(TFIDFMapper.class);
 		job.setReducerClass(TFIDFReducer.class);
-//		job.setNumReduceTasks(3);
 		job.setPartitionerClass(PairKeysPartitioner.class);
 		job.setMapOutputKeyClass(StringPair.class);
 		job.setMapOutputValueClass(IntWritable.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
+		
+//		job.setGroupingComparatorClass(PairKeysGroupingComparator.class);
+		job.setNumReduceTasks(1);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));

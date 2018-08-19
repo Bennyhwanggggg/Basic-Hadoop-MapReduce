@@ -2,14 +2,18 @@ package comp9313.proj1;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -24,7 +28,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class Project1 {
 	
-	public static class TFMapper extends Mapper<Object, Text, StringPair, IntWritable> {
+	public static class TFIDFMapper extends Mapper<Object, Text, StringPair, IntWritable> {
 		
 		private static final IntWritable one = new IntWritable(1);
 		private StringPair pair = new StringPair();
@@ -60,16 +64,27 @@ public class Project1 {
 		}
 	}
 	
-	public static class TFReducer extends Reducer<StringPair, IntWritable, StringPair, IntWritable> {
-		private IntWritable result = new IntWritable();
+	public static class TFIDFReducer extends Reducer<StringPair, IntWritable, Text, Text> {
+		private DoubleWritable tf = new DoubleWritable();
+		private DoubleWritable df = new DoubleWritable();
+		private DoubleWritable weight = new DoubleWritable();
 		
 		public void reduce(StringPair key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			int sum = 0;
 			for (IntWritable val: values) {
 				sum += val.get();
 			}
-			result.set(sum);
-			context.write(key, result);
+			
+			if (key.getSecond().equals("**")) {
+				df.set(sum);
+			} else {
+				tf.set(sum);
+				double idf = Math.log10(4/df.get());
+				weight = new DoubleWritable(tf.get() * idf);
+				Text term = new Text(key.getFirst());
+				Text result = new Text(key.getSecond() + ", " + weight.toString());
+				context.write(term, result);
+			}
 		}
 	}
 
@@ -83,19 +98,19 @@ public class Project1 {
 		Configuration conf = new Configuration();
 		
 		// Start term frequency first
-		Job job1 = Job.getInstance(conf, "Get_TF_DF");
-		job1.setJarByClass(Project1.class);
-		job1.setMapperClass(TFMapper.class);
-		job1.setReducerClass(TFReducer.class);
-		job1.setPartitionerClass(PairKeysPartitioner.class);
-		job1.setMapOutputKeyClass(StringPair.class);
-		job1.setMapOutputValueClass(IntWritable.class);
-		job1.setOutputKeyClass(Text.class);
-		job1.setOutputValueClass(IntWritable.class);
+		Job job = Job.getInstance(conf, "Get_TF_DF");
+		job.setJarByClass(Project1.class);
+		job.setMapperClass(TFIDFMapper.class);
+		job.setReducerClass(TFIDFReducer.class);
+//		job.setNumReduceTasks(3);
+		job.setPartitionerClass(PairKeysPartitioner.class);
+		job.setMapOutputKeyClass(StringPair.class);
+		job.setMapOutputValueClass(IntWritable.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
 		
-		job1.setNumReduceTasks(3);
-		FileInputFormat.addInputPath(job1, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job1, new Path(args[1]));
-		System.exit(job1.waitForCompletion(true) ? 0 : 1);
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

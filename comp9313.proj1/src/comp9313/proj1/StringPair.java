@@ -71,19 +71,14 @@ public class StringPair implements WritableComparable<StringPair>{
 		if (cmp != 0) {
 			return cmp;
 		}
-		return compare(this.getSecond(), string.getSecond());
+		if (this.getSecond().equals("*")) {
+			return -1;
+		} else if (string.getSecond().equals("*")) {
+			return 1;
+		} else {
+			Integer docID1 = Integer.parseInt(this.getSecond());
+			Integer docID2 = Integer.parseInt(string.getSecond());
+			return docID1.compareTo(docID2);
+		}
 	}
-//	@Override
-//	public int compareTo(StringPair s2) {
-//		int cmp = this.getFirst().compareTo(s2.getFirst());
-//		if (cmp != 0) {
-//			return cmp;
-//		}
-//		if (this.getSecond().equals("**")) {
-//			return -1;
-//		} else if (s2.getSecond().equals("**")) {
-//			return 1;
-//		}
-//		return this.getSecond().compareTo(s2.getSecond());
-//	}
 }

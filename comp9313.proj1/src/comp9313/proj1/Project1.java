@@ -58,24 +58,28 @@ public class Project1 {
 		}
 	}
 	
-//	public static class PairKeysGroupingComparator extends WritableComparator {
-//		
-//		protected PairKeysGroupingComparator(){
-//			super(StringPair.class, true);
-//		}
-//		
-//		public int compare(WritableComparable wc1, WritableComparable wc2) {
-//			StringPair pair1 = (StringPair) wc1;
-//			StringPair pair2 = (StringPair) wc2;
-//			return pair1.getFirst().compareTo(pair2.getFirst());
-//		}
-//	}
+	public static class PairKeysGroupingComparator extends WritableComparator {
+		
+		protected PairKeysGroupingComparator(){
+			super(StringPair.class, true);
+		}
+		
+		public int compare(WritableComparable wc1, WritableComparable wc2) {
+			StringPair pair1 = (StringPair) wc1;
+			StringPair pair2 = (StringPair) wc2;
+			int cmp = pair1.getFirst().compareTo(pair2.getFirst());
+			if (cmp != 0) {
+				return cmp;
+			} else {
+				return pair1.getSecond().compareTo(pair2.getSecond()); // ensures all [term, *] pair gets send to reducer together because of how StringPair class was modified to sort the integer
+			}
+		}
+	}
 	
 	public class PairKeysPartitioner extends Partitioner<StringPair, IntWritable> {
 
 		@Override
 		public int getPartition(StringPair key, IntWritable intWritable, int numPartitions) {
-			System.out.println(key.toString());
 			return (key.getFirst().hashCode()) % numPartitions;
 		}
 	}
@@ -89,13 +93,14 @@ public class Project1 {
 			for (IntWritable val: values) {
 				sum += val.get();
 			}
-			
+			System.out.println(key.toString());
 			if (key.getSecond().equals("*")) {
 				df.set(sum);
 			} else {
 				double tf = sum;
-				double idf = Math.log10(4/df.get());
+				double idf = Math.log10(11/df.get());
 				DoubleWritable weight = new DoubleWritable(tf * idf);
+				System.out.println(key.toString() + " tf:" + tf + " df:" + df);
 				Text term = new Text(key.getFirst());
 				Text result = new Text(key.getSecond() + ", " + weight.toString());
 				context.write(term, result);
@@ -123,7 +128,7 @@ public class Project1 {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-//		job.setGroupingComparatorClass(PairKeysGroupingComparator.class);
+		job.setGroupingComparatorClass(PairKeysGroupingComparator.class);
 		job.setNumReduceTasks(1);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));

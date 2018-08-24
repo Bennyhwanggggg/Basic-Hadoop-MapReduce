@@ -53,6 +53,31 @@ public class StringPair implements WritableComparable<StringPair>{
 		return sb.toString();
 	}
 	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+
+		StringPair that = (StringPair) o;
+
+		if (first != null ? !first.equals(that.first) : that.first != null)
+			return false;
+		if (second != null ? !second.equals(that.second) : that.second != null)
+			return false;
+		
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = first != null ? first.hashCode() : 0;
+		result = 31 * result + (second != null ? second.hashCode() : 0);
+		return result;
+		//return first.hashCode();
+	}
+	
 	private int compare(String s1, String s2) {
 		if (s1 == null && s2 != null) {
 			return -1;
@@ -71,11 +96,16 @@ public class StringPair implements WritableComparable<StringPair>{
 		if (cmp != 0) {
 			return cmp;
 		}
-		if (this.getSecond().equals("*")) {
+		if (this.getSecond().equals("@")) {
+			return -1;
+		} else if (string.getSecond().equals("@")) {
+			return 1;
+		} else if (this.getSecond().equals("*")) {
 			return -1;
 		} else if (string.getSecond().equals("*")) {
 			return 1;
 		} else {
+			// To sort docID properly, need to convert it to integer.
 			Integer docID1 = Integer.parseInt(this.getSecond());
 			Integer docID2 = Integer.parseInt(string.getSecond());
 			return docID1.compareTo(docID2);

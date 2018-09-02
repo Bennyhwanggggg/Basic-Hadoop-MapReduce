@@ -30,20 +30,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class Project1 {
 	
-//	static enum NumDoc {
-//		COUNT;
-//	}
-//	
-//	// Mapper for document counting job..
-//	public static class DocCountMapper extends Mapper<Object, Text, StringPair, IntWritable> {
-//		
-//		public void map(Object key, Text value, Context context) throws IOException, InterruptedException{
-//			
-//			// Simply update counter to count number of lines which is the number of documents.
-//			context.getCounter(NumDoc.COUNT).increment(1);
-//		}
-//	}
-	
 	public static class TFIDFMapper extends Mapper<Object, Text, StringPair, IntWritable> {
 		
 		private static final IntWritable one = new IntWritable(1);
@@ -70,9 +56,6 @@ public class Project1 {
 				pair.set(term, "*");
 				context.write(pair, one);
 			}
-//			
-//			// Update the number of document, N, count
-//			context.getCounter(NumDoc.COUNT).increment(1);
 		}
 	}
 	
@@ -99,6 +82,19 @@ public class Project1 {
 		@Override
 		public int getPartition(StringPair key, IntWritable intWritable, int numPartitions) {
 			return (key.getFirst().hashCode() & Integer.MAX_VALUE) % numPartitions;
+		}
+	}
+	public static class TFIDFCombiner extends Reducer<StringPair, IntWritable, StringPair, IntWritable> {
+
+		private IntWritable result = new IntWritable();
+
+		public void reduce(StringPair key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val: values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
 		}
 	}
 	
@@ -141,6 +137,7 @@ public class Project1 {
 		// Create config and setup folders and files
 		Configuration conf = new Configuration();
 		
+		// Count number of lines in the file which is number of documents in total.
 		FileSystem hdfs = FileSystem.get(new URI("hdfs://localhost:9000"), conf);
 		FileStatus[] status = hdfs.listStatus(inputPath);
 		double nLines = 0;
@@ -161,31 +158,12 @@ public class Project1 {
 				}
 			}
 		}
-//		System.out.println(nLines);
-//
-//		// Find total number of document first
-//		Job countJob = Job.getInstance(conf, "DocCount");
-//		countJob.setJarByClass(Project1.class);
-//		countJob.setMapperClass(DocCountMapper.class);
-//		countJob.setNumReduceTasks(0);	// no reduce job needed for as we are only interested in the counter we get from config
-//		FileInputFormat.addInputPath(countJob, inputPath);
-//		FileOutputFormat.setOutputPath(countJob, outputPath);
-//		countJob.waitForCompletion(true);
-//		
-//		long n = countJob.getCounters().findCounter(NumDoc.COUNT).getValue(); // Extract N and pass it to the next job
-//		
-//		// Delete output dir
-//		if (hdfs.exists(outputPath)) {
-//			hdfs.delete(outputPath, true);
-//		}
-//
-//		// Start tf-idf calculation 
-//		Configuration tfidfConf = new Configuration();
-//		tfidfConf.set("TotalDocCount", Long.toString(n));
+
 		conf.set("NumDoc", Double.toString(nLines));
 		Job job = Job.getInstance(conf, "Get_TF_DF");
 		job.setJarByClass(Project1.class);
 		job.setMapperClass(TFIDFMapper.class);
+		job.setCombinerClass(TFIDFCombiner.class);
 		job.setReducerClass(TFIDFReducer.class);
 		job.setPartitionerClass(PairKeysPartitioner.class);
 		job.setMapOutputKeyClass(StringPair.class);

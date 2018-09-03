@@ -122,7 +122,7 @@ public class Project1 {
 				double idf = Math.log10(n/df.get());
 				DoubleWritable weight = new DoubleWritable(tf * idf);
 				Text term = new Text(key.getFirst());
-				Text result = new Text(key.getSecond() + ", " + weight.toString());
+				Text result = new Text(key.getSecond() + "," + weight.toString());
 				context.write(term, result);
 			}
 		}
@@ -172,7 +172,7 @@ public class Project1 {
 		job.setOutputValueClass(Text.class);
 		
 		job.setGroupingComparatorClass(PairKeysGroupingComparator.class);
-		job.setNumReduceTasks(3);
+		job.setNumReduceTasks(Integer.parseInt(args[2]));
 	
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));

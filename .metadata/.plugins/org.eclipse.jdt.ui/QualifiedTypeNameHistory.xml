@@ -16,7 +16,6 @@
 <fullyQualifiedTypeName name="org.apache.hadoop.mapreduce.Reducer"/>
 <fullyQualifiedTypeName name="java.util.Set"/>
 <fullyQualifiedTypeName name="java.util.HashSet"/>
-<fullyQualifiedTypeName name="org.apache.hadoop.mapreduce.Partitioner"/>
 <fullyQualifiedTypeName name="org.apache.hadoop.io.WritableUtils"/>
 <fullyQualifiedTypeName name="org.apache.hadoop.mapreduce.lib.input.FileSplit"/>
 <fullyQualifiedTypeName name="com.sun.jersey.core.impl.provider.entity.XMLJAXBElementProvider.Text"/>
@@ -25,7 +24,6 @@
 <fullyQualifiedTypeName name="java.util.Arrays"/>
 <fullyQualifiedTypeName name="java.util.Map"/>
 <fullyQualifiedTypeName name="java.util.Map.Entry"/>
-<fullyQualifiedTypeName name="org.apache.hadoop.io.DoubleWritable"/>
 <fullyQualifiedTypeName name="org.apache.hadoop.io.WritableComparator"/>
 <fullyQualifiedTypeName name="org.apache.hadoop.io.WritableComparable"/>
 <fullyQualifiedTypeName name="java.lang.Integer"/>
@@ -44,4 +42,6 @@
 <fullyQualifiedTypeName name="org.apache.hadoop.fs.FSDataInputStream"/>
 <fullyQualifiedTypeName name="java.io.InputStreamReader"/>
 <fullyQualifiedTypeName name="java.io.BufferedReader"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.mapreduce.Partitioner"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.io.DoubleWritable"/>
 </qualifiedTypeNameHistroy>
